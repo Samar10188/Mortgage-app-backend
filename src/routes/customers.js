@@ -2,13 +2,13 @@ const CustomerModel = require('../models/customer.model');
 const express = require('express');
 const router = express.Router();
 const MongoClient = require('mongodb').MongoClient;
+const checkAuth = require('../middleware/check-auth');
 var ObjectId = require('mongodb').ObjectID;
 var assert = require('assert');
 var url = 'mongodb://localhost:27017/my_database';
 
-// Create a new customer
-// Post localhost:3000/customer
-router.post('/customer/post', (req, res, next) => {
+
+router.post('/post', checkAuth, (req, res, next) => {
 
     if (!req.body.date) {
         return res.status(400).send('Request date is missing')
@@ -54,14 +54,14 @@ router.post('/customer/post', (req, res, next) => {
                 database.close();
                 return res.status(500).send('There is a problem inserting. The error is ', err)
             }
-            res.status(201).send("Data inserted successfully!!")
+            res.status(201).json({ message: "Data inserted successfully!!"})
             database.close();
         })
     })
 })
 
 //get request
-router.get('/customer/get', (req, res, next) => {
+router.get('/get', checkAuth, (req, res, next) => {
 
     var resultArray = [];
     MongoClient.connect(url, (err, database) => {
@@ -84,24 +84,24 @@ router.get('/customer/get', (req, res, next) => {
             console.log("req.query._id :", req.query._id);
             db.collection('Customers').findOne({ "_id": ObjectId(req.query._id) })
                 .then(doc => {
-                    console.log("status 201 and the doc value is", doc)
+                    console.log("status 201 and the doc value is", doc);
                     database.close();
-                    res.status(201).json(doc)
+                    res.status(201).json(doc);
                 })
                 .catch(err => {
-                    console.log("status 500 and the doc value is", doc)
+                    console.log("status 500 and the doc value is", err);
                     database.close();
-                    res.status(500).json(err)
+                    res.status(500).json(err);
                 })
         }
     })
 })
 
 // update request
-router.put('/customer/update', (req, res, next) => {
+router.put('/update', checkAuth, (req, res, next) => {
     // console.log('req.body :',req.body)
     if (!req.body._id) {
-        return res.status(400).send('Missing URL parameter: _id')
+        return res.status(400).json({ message: 'Missing URL parameter: _id'})
     }
 
     MongoClient.connect(url, (err, database) => {
@@ -124,43 +124,18 @@ router.put('/customer/update', (req, res, next) => {
             .then(doc => {
                 console.log("Data successfully updated!!");
                 database.close();
-                res.status(201).send("Data successfully updated!!");
+                res.status(201).json({ message: "Data successfully updated!!"});
             })
             .catch(err => {
                 console.log("There is some error while updating. The error is ", err);
                 database.close();
                 res.status(500).send("There is some error while updating.").json(err);
             })
-        // .then((doc, err) => {
-        //     if(doc){
-        //         console.log("status 201 and the doc value is", doc)
-        //     database.close();
-        //     res.status(201).json(doc)
-        //     }
-        //     else{
-        //        console.log("status 500 and the doc value is", doc)
-        //     database.close();
-        //     res.status(500).json(err)
-        //     }
-        // })
-        // CustomerModel.findOneAndUpdate({
-        //     email: req.query.id
-        // },
-        //     req.body, {
-        //     new: true
-        // })
-        //     .then(doc => {
-        //         res.json(doc)
-        //     })
-        //     .catch(err => {
-        //         res.status(500).json(err)
-        //     })
-        // next();
     })
 })
 
 // delete request
-router.delete('/customer/delete', (req, res, next) => {
+router.delete('/delete', checkAuth, (req, res, next) => {
 
     if (!req.query._id) {
         return res.status(400).send('Missing URL parameter: _id')
@@ -177,29 +152,14 @@ router.delete('/customer/delete', (req, res, next) => {
                 if (doc.value) {
                     console.log("Cutomer deleted successfully!!", doc)
                     database.close();
-                    res.status(201).send("Cutomer deleted successfully!!");
+                    res.status(201).json({ message: "Cutomer deleted successfully!!"});
                 }
                 else {
                     console.log("Customer not found with the provided id")
                     database.close();
-                    res.status(404).send("Customer not found with the provided id");
+                    res.status(404).json({ message: "Customer not found with the provided id"});
                 }
             })
-        // .catch(err => {
-        //     console.log("Error while deleting customer")
-        //     database.close();
-        //     res.status(500).send("Error while deleting customer")
-        // })
-        // CustomerModel.findOneAndDelete({
-        //     email: req.query.email
-        // })
-        //     .then(doc => {
-        //         res.json(doc)
-        //     })
-        //     .catch(err => {
-        //         res.status(500).json(err)
-        //     })
-        // // next();
     })
 })
 
